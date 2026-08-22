@@ -3,9 +3,7 @@ name: Build APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
 
 jobs:
   build:
@@ -15,45 +13,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Find Android project
+        run: |
+          echo "Searching for Android project..."
+          find . -name "settings.gradle" -o -name "settings.gradle.kts"
+          find . -name "gradlew"
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-
-      - name: Find Android project
-        run: |
-          echo "Searching for Gradle project..."
-          find . -name "settings.gradle" -o -name "settings.gradle.kts"
-          find . -name "build.gradle" -o -name "build.gradle.kts"
-
       - name: Build APK
         run: |
-          PROJECT=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
-
-          if [ -z "$PROJECT" ]; then
-            echo "ERROR: No Gradle Android project found."
-            exit 1
-          fi
-
-          DIR=$(dirname "$PROJECT")
-          echo "Building project in: $DIR"
-          cd "$DIR"
-          gradle assembleDebug
-
-      - name: Find APK
-        run: |
-          echo "APK files:"
-          find . -type f -name "*.apk" -print
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Chess-APK
-          path: "**/build/outputs/apk/debug/*.apk"
-          if-no-files-found: error
+          path: "**/build/outputs/apk/**/*.apk": error
