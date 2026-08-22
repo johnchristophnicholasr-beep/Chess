@@ -17,14 +17,14 @@ jobs:
       - name: Extract existing project
         run: |
           mkdir -p extracted
-          unzip -o Chess_APK_READY.zip -d extracted
+          unzip -o Chess_APK_FIXED.zip -d extracted
 
       - name: Find Android project
         run: |
           SETTINGS=$(find extracted -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) | head -n 1)
 
           if [ -z "$SETTINGS" ]; then
-            echo "❌ No Android project found inside Chess_APK_READY.zip"
+            echo "❌ No Android project found inside Chess_APK_FIXED.zip"
             find extracted -maxdepth 4 -type f | head -100
             exit 1
           fi
