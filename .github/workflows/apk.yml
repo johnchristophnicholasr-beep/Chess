@@ -3,7 +3,8 @@ name: Build APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -13,20 +14,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Extract existing project
+        run: |
+          mkdir -p extracted
+          unzip -o Chess_APK_READY.zip -d extracted
+
       - name: Find Android project
         run: |
-          echo "Searching for Android project..."
-          find . -name "settings.gradle" -o -name "settings.gradle.kts"
-          find . -name "gradlew"
+          SETTINGS=$(find extracted -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) | head -n 1)
+
+          if [ -z "$SETTINGS" ]; then
+            echo "❌ No Android project found inside Chess_APK_READY.zip"
+            find extracted -maxdepth 4 -type f | head -100
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "✅ Android project found at: $PROJECT_DIR"
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Build APK
         run: |
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -34,4 +49,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Chess-APK
-          path: "**/build/outputs/apk/**/*.apk": error
+          path: "**/build/outputs/apk/**/*.apk"
