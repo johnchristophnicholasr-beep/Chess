@@ -7,249 +7,39 @@ on:
       - main
       - master
 
-permissions:
-  contents: read
-
 jobs:
   build:
-    name: Build Chess APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Create Chess Android project
-        shell: bash
-        run: |
-          set -e
-
-          mkdir -p app/src/main/java/com/example/chess
-          mkdir -p app/src/main/res/values
-
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.name = "Chess"
-          include ':app'
-          EOF
-
-          cat > build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application' version '8.5.2' apply false
-          }
-          EOF
-
-          cat > gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          EOF
-
-          cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
-
-          android {
-              namespace 'com.example.chess'
-              compileSdk 35
-
-              defaultConfig {
-                  applicationId 'com.example.chess'
-                  minSdk 23
-                  targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
-              }
-          }
-          EOF
-
-          cat > app/src/main/res/values/strings.xml <<'EOF'
-          <resources>
-              <string name="app_name">Chess</string>
-          </resources>
-          EOF
-
-          cat > app/src/main/res/values/styles.xml <<'EOF'
-          <resources>
-              <style name="AppTheme"
-                  parent="android:style/Theme.Material.Light.NoActionBar">
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#5B8DEF</item>
-                  <item name="android:navigationBarColor">#111318</item>
-                  <item name="android:statusBarColor">#111318</item>
-              </style>
-          </resources>
-          EOF
-
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <application
-                  android:theme="@style/AppTheme"
-                  android:label="@string/app_name"
-                  android:resizeableActivity="true">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:screenOrientation="portrait"
-                      android:exported="true">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-
-          </manifest>
-          EOF
-
-          cat > app/src/main/java/com/example/chess/MainActivity.java <<'EOF'
-          package com.example.chess;
-
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.graphics.*;
-          import android.view.*;
-
-          public class MainActivity extends Activity {
-
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  setContentView(new ChessView());
-              }
-
-              class ChessView extends View {
-
-                  Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                  char[][] board = new char[8][8];
-
-                  ChessView() {
-                      super(MainActivity.this);
-                      resetBoard();
-                  }
-
-                  void resetBoard() {
-                      String[] rows = {
-                          "rnbqkbnr",
-                          "pppppppp",
-                          "........",
-                          "........",
-                          "........",
-                          "........",
-                          "PPPPPPPP",
-                          "RNBQKBNR"
-                      };
-
-                      for (int r = 0; r < 8; r++) {
-                          board[r] = rows[r].toCharArray();
-                      }
-                  }
-
-                  @Override
-                  protected void onDraw(Canvas canvas) {
-                      super.onDraw(canvas);
-
-                      canvas.drawColor(Color.rgb(25, 25, 30));
-
-                      float size = getWidth() / 8f;
-
-                      for (int r = 0; r < 8; r++) {
-                          for (int c = 0; c < 8; c++) {
-
-                              if ((r + c) % 2 == 0) {
-                                  paint.setColor(Color.rgb(238, 238, 210));
-                              } else {
-                                  paint.setColor(Color.rgb(118, 150, 86));
-                              }
-
-                              canvas.drawRect(
-                                  c * size,
-                                  r * size,
-                                  (c + 1) * size,
-                                  (r + 1) * size,
-                                  paint
-                              );
-
-                              char piece = board[r][c];
-
-                              if (piece != '.') {
-
-                                  paint.setColor(
-                                      Character.isUpperCase(piece)
-                                          ? Color.WHITE
-                                          : Color.BLACK
-                                  );
-
-                                  paint.setTextSize(size * 0.65f);
-                                  paint.setTextAlign(Paint.Align.CENTER);
-
-                                  canvas.drawText(
-                                      pieceSymbol(piece),
-                                      c * size + size / 2,
-                                      r * size + size * 0.72f,
-                                      paint
-                                  );
-                              }
-                          }
-                      }
-                  }
-
-                  String pieceSymbol(char piece) {
-                      switch (Character.toLowerCase(piece)) {
-                          case 'k': return "♚";
-                          case 'q': return "♛";
-                          case 'r': return "♜";
-                          case 'b': return "♝";
-                          case 'n': return "♞";
-                          default: return "♟";
-                      }
-                  }
-              }
-          }
-          EOF
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.9'
 
-      - name: Build Debug APK
+      - name: Check Android project
         run: |
-          gradle :app:assembleDebug --no-daemon --stacktrace
+          echo "Checking project..."
+          test -f settings.gradle
+          test -f build.gradle
+          test -f app/build.gradle
+          echo "Android project found!"
 
-      - name: Verify APK
-        run: |
-          echo "APK files:"
-          find app/build/outputs -type f -name "*.apk" -print
+      - name: Build APK
+        run: gradle --no-daemon assembleDebug
 
-      - name: Upload Chess APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Chess-APK
+          name: Chess-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
