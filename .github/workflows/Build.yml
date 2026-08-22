@@ -17,27 +17,9 @@ jobs:
       - name: Extract game project
         run: |
           set -e
-          test -f Chess_APK_READY.zip
           rm -rf project
           mkdir project
           unzip -q Chess_APK_READY.zip -d project
-
-      - name: Locate Gradle project
-        run: |
-          set -e
-
-          GRADLEW=$(find project -type f -name gradlew | head -n 1)
-
-          if [ -z "$GRADLEW" ]; then
-            echo "❌ Chess_APK_READY.zip does not contain gradlew."
-            echo "Files inside ZIP:"
-            find project -maxdepth 5 -type f | head -100
-            exit 1
-          fi
-
-          ROOT=$(dirname "$GRADLEW")
-          echo "ROOT=$ROOT" >> "$GITHUB_ENV"
-          echo "✅ Android project: $ROOT"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -45,11 +27,15 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
       - name: Build APK
-        working-directory: ${{ env.ROOT }}
+        working-directory: project
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
