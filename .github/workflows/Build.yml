@@ -26,19 +26,31 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Check Android project
+      - name: Find Android project
+        shell: bash
         run: |
-          test -f settings.gradle
-          test -f build.gradle
-          test -f app/build.gradle
-          echo "Android project found!"
+          PROJECT=$(find . -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) \
+            -not -path "./.gradle/*" | head -n 1)
+
+          if [ -z "$PROJECT" ]; then
+            echo "ERROR: settings.gradle was not found anywhere."
+            echo "Repository files:"
+            find . -maxdepth 3 -type f | sort
+            exit 1
+          fi
+
+          PROJECT_DIR=$(dirname "$PROJECT")
+          echo "Android project found at: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Build APK
-        run: gradle --no-daemon assembleDebug
+        run: |
+          cd "$PROJECT_DIR"
+          gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Chess-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
