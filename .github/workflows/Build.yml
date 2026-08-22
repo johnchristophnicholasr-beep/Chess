@@ -28,7 +28,6 @@ jobs:
 
       - name: Check Android project
         run: |
-          echo "Checking project..."
           test -f settings.gradle
           test -f build.gradle
           test -f app/build.gradle
