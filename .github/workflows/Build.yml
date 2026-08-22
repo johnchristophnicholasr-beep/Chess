@@ -19,7 +19,7 @@ jobs:
           set -e
           rm -rf project
           mkdir project
-          unzip -q Chess_APK_READY.zip -d project
+          unzip -q Chess_APK_FIXED.zip -d project
 
       - name: Set up Java
         uses: actions/setup-java@v4
